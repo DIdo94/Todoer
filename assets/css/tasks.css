@@ -27,7 +27,7 @@ select option:hover {
 }
 
 .back .card-heading {
-    color:  lightslategray; 
+    color:  lightslategray;
 }
 
 .back .card-body {
@@ -245,4 +245,11 @@ form .slider.slider-horizontal {
 .cards-container .loader {
    margin-left: 38%;
    margin-top: 50px;
+}
+
+.no-results {
+    color:gray;
+    font-size: 20px;
+    text-align: center;
+    margin-top: 40px;
 }

@@ -111,8 +111,8 @@
                             Are you sure you want to delete this task?
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-danger confirm-delete">Delete</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-danger confirm-delete gray-input">Delete</button>
                         </div>
                     </div>
                 </div>
@@ -287,6 +287,10 @@
 
             loadTasks();
 
+            function areRequiredFieldsFilled(task) {
+                return !!task.code && !!task.name && !!task.completion;
+            }
+
             $(document).on('click', '.delete-btn', function () {
                 let modalTitle = $(this).closest(".card").find('.front .card-heading-text').text();
                 cardId = $(this).closest(".card").find('.task-id').first().val();
@@ -339,12 +343,6 @@
                 let description = cardBack.find('.card-body textarea').first().val();
                 let completion = cardBack.find('.task-completion').first().val();
                 let points = parseInt(cardBack.find('.task-points').first().val());
-
-                if (points < 1 || points > 21) {
-                    toastr.error('Points should be between 1 and 21', 'Points not in range!')
-                    return;
-                }
-
                 const data = {
                     id: cardId,
                     code: taskCode,
@@ -353,6 +351,15 @@
                     completion: completion,
                     points: points
                 };
+                if (points < 1 || points > 21) {
+                    toastr.error('Points should be between 1 and 21', 'Points not in range!')
+                    return;
+                }
+
+                if (!areRequiredFieldsFilled(data)) {
+                    toastr.error('Task code, name and category are required!');
+                    return;
+                }
 
                 dbAccessor.editTask(data).done(function () {
                     $('.cards-container').html(' ');
@@ -383,6 +390,12 @@
                     obj[item.name] = item.value;
                     return obj;
                 }, {});
+
+                if (!areRequiredFieldsFilled(data)) {
+                    toastr.error('Task code, name and category are required!');
+                    return;
+                }
+
                 data.points = $('#points').slider().data('slider').getValue();
                 data.status = 0;
                 data.userPhoto = data.userId = null;
@@ -392,6 +405,7 @@
                     loadTasks();
                     $('#reset-filters').trigger('click');
                     $('.add-task-form').toggle(100);
+                    $('.add-task-filter').removeClass('active')
                     $('.add-task-form').find('input[type="text"], input[type="number"], textarea').val('');
                     toastr.success('Task successfully added!');
                 });
@@ -411,11 +425,14 @@
                         sortField: 'name',
                         create: false,
                         maxItems: 1
-                    })
+                    });
+
                 });
 
                 modalTaskId = $(this).closest('.card').find('.task-id').first().val();
+                let modalTitle = $(this).closest(".card").find('.front .card-heading-text').text();
                 $('#assignModal .task-id').first().val(modalTaskId);
+                $('#assignModal .modal-title').text(modalTitle);
             });
 
             $('#assign-btn').click(function () {
@@ -440,7 +457,7 @@
             $('#code-filter').on('input', debounce(function () {
                 taskFilter.code = $(this).val().toLowerCase();
                 applyFilters();
-            }, 200));
+            }, 500));
 
             $('#points-filter').slider().on('slideStop', function () {
                 taskFilter.points = $(this).data('slider').getValue();
@@ -475,10 +492,13 @@
 
                 setTimeout(function name(params) {
                     $('.cards-container').html(' ');
-
-                    for (task of filteredTasks) {
-                        let taskBody = buildTemplate(task);
-                        $('.cards-container').append(taskBody);
+                    if (!!filteredTasks.length) {
+                        for (task of filteredTasks) {
+                            let taskBody = buildTemplate(task);
+                            $('.cards-container').append(taskBody);
+                        }
+                    } else {
+                        $('.cards-container').html('<div class="no-results">No results found... Sorry :(</div>');
                     }
 
                     $('#code-filter').removeAttr('disabled');
@@ -490,6 +510,8 @@
 
             function resetFilters() {
                 $('#points-filter').slider().data('slider').setValue([1, 21]);
+                $('#status-filter').val(-1);
+                $('#code-filter').val('');
                 taskFilter = {};
                 applyFilters();
             }
@@ -510,9 +532,6 @@
             };
 
             $('#reset-filters').click(resetFilters);
-            // $(".dropdown-submenu").click(function() {
-            //     $(this).closest('.dropdown-menu').toggle();
-            // })
         });
     </script>
 </body>
